@@ -13,6 +13,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import static java.util.Collections.singletonList;
 import static org.msyu.parser.methodic.EnumLimiterInfo.withEnumClassAndSet;
 import static org.msyu.parser.methodic.MethodicException.badDefinition;
 import static org.msyu.parser.methodic.MethodicException.badEnumLimiter;
@@ -55,10 +57,12 @@ public final class MethodicGrammar {
 	private final Map<Object, ASymbol> symbolByRep = new HashMap<>();
 	private final Map<org.msyu.parser.glr.Production, Method> methodByProduction = new HashMap<>();
 	private final Set<org.msyu.parser.glr.Production> noopProductions = new HashSet<>();
+	private final Set<org.msyu.parser.glr.Production> repeatBodyProductions = new HashSet<>();
+	private final Set<org.msyu.parser.glr.Production> repeatTailProductions = new HashSet<>();
 	private final Set<Class<?>> definitionIfaces = new HashSet<>();
 	private final Map<Method, MethodHandle> handleByMethod = new HashMap<>();
 
-	public SymbolNameGenerator symbolNameGenerator = SymbolNameGenerator.DEFAULT;
+	public SymbolNameGenerator symbolNameGenerator = DefaultSymbolNameGenerator.INSTANCE;
 
 	public MethodicGrammar(GrammarBuilder gb) {
 		this.gb = gb;
@@ -195,6 +199,39 @@ public final class MethodicGrammar {
 					noopProductions.add(gb.addProduction(nonTerminal, symbolByRep.get(element)));
 				}
 				symbolByRep.put(set, nonTerminal);
+			} else if (unregisteredRep instanceof RepeatRep) {
+				RepeatRep repeatRep = (RepeatRep) unregisteredRep;
+				Object elementRep = repeatRep.elementRep;
+				ASymbol elementSymbol = symbolByRep.get(elementRep);
+				int minCount = repeatRep.annotation.value();
+				int maxCount;
+				if (minCount > 0) {
+					maxCount = minCount;
+				} else {
+					minCount = repeatRep.annotation.min();
+					maxCount = repeatRep.annotation.max();
+				}
+				NonTerminal mainSymbol = gb.addNonTerminal(symbolNameGenerator.repeat(minCount, maxCount, elementRep));
+				if (minCount == maxCount) {
+					repeatBodyProductions.add(gb.addProduction(mainSymbol, Collections.nCopies(minCount, elementSymbol)));
+				} else {
+					NonTerminal bodySymbol = gb.addNonTerminal(symbolNameGenerator.repeatInner(minCount, elementRep));
+					repeatBodyProductions.add(gb.addProduction(bodySymbol, Collections.nCopies(minCount, elementSymbol)));
+					noopProductions.add(gb.addProduction(mainSymbol, bodySymbol));
+					if (maxCount == Repeat.INF) {
+						NonTerminal tailSymbol = gb.addNonTerminal(symbolNameGenerator.repeatInner(maxCount, elementRep));
+						repeatTailProductions.add(gb.addProduction(tailSymbol, mainSymbol, elementSymbol));
+						noopProductions.add(gb.addProduction(mainSymbol, tailSymbol));
+					} else {
+						while (++minCount <= maxCount) {
+							NonTerminal tailSymbol = gb.addNonTerminal(symbolNameGenerator.repeatInner(minCount, elementRep));
+							repeatTailProductions.add(gb.addProduction(tailSymbol, bodySymbol, elementSymbol));
+							noopProductions.add(gb.addProduction(mainSymbol, tailSymbol));
+							bodySymbol = tailSymbol;
+						}
+					}
+				}
+				symbolByRep.put(repeatRep, mainSymbol);
 			} else {
 				throw new UnsupportedOperationException("tell the developers: can't generate symbol for rep " + unregisteredRep);
 			}
@@ -214,6 +251,48 @@ public final class MethodicGrammar {
 	}
 
 	private Object checkAndRepresent(
+			AnnotatedElement annotatedElement,
+			Type type,
+			Map<Class<?>, EnumLimiterInfo> limiterInfoByEnumClass,
+			boolean mustBeNonTerminal,
+			Function<String, MethodicException> onError,
+			Set<Object> unregisteredReps
+	) {
+		if (type instanceof ParameterizedType) {
+			ParameterizedType parameterizedType = (ParameterizedType) type;
+			if (parameterizedType.getRawType() == List.class) {
+				Repeat annotation = annotatedElement.getDeclaredAnnotation(Repeat.class);
+				if (annotation == null) {
+					throw onError.apply("is a generic List but has no @Repeat");
+				}
+				if (annotation.value() <= 0) {
+					if (annotation.min() < 0) {
+						throw onError.apply("has a @Repeat annotation with negative min()");
+					}
+					if (annotation.max() <= 0) {
+						throw onError.apply("has a @Repeat annotation with non-positive max()");
+					}
+					if (annotation.min() > annotation.max()) {
+						throw onError.apply("has a @Repeat annotation with min() > max()");
+					}
+				}
+				Object parameterRep = checkAndRepresent0(
+						annotatedElement,
+						parameterizedType.getActualTypeArguments()[0],
+						limiterInfoByEnumClass,
+						mustBeNonTerminal,
+						onError,
+						unregisteredReps
+				);
+				RepeatRep repeatRep = new RepeatRep(annotation, parameterRep);
+				maybeAddToUnregistered(repeatRep, symbolByRep.get(repeatRep), unregisteredReps, onError);
+				return repeatRep;
+			}
+		}
+		return checkAndRepresent0(annotatedElement, type, limiterInfoByEnumClass, mustBeNonTerminal, onError, unregisteredReps);
+	}
+
+	private Object checkAndRepresent0(
 			AnnotatedElement annotatedElement,
 			Type type,
 			Map<Class<?>, EnumLimiterInfo> limiterInfoByEnumClass,
@@ -304,13 +383,24 @@ public final class MethodicGrammar {
 		MethodHandle handle = handleByMethod.get(methodByProduction.get(production));
 		if (handle != null) {
 			try {
-				return Collections.singletonList(handle.invokeWithArguments(tokens));
+				return singletonList(handle.invokeWithArguments(tokens));
 			} catch (Throwable t) {
 				throw new ReductionException(t);
 			}
 		}
 		if (noopProductions.contains(production)) {
-			return tokens;
+			return new ArrayList<>(tokens);
+		}
+		if (repeatBodyProductions.contains(production)) {
+			return singletonList(new ArrayList<>(tokens));
+		}
+		if (repeatTailProductions.contains(production)) {
+			List body = (List) tokens.get(0);
+			Object tail = tokens.get(1);
+			List<Object> result = new ArrayList<>(body.size() + 1);
+			result.addAll(body);
+			result.add(tail);
+			return singletonList(result);
 		}
 		throw new ReductionException(new UnsupportedOperationException(production.toString()));
 	}
