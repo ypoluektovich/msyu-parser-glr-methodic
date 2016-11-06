@@ -1,9 +1,10 @@
 package org.msyu.parser.methodic;
 
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.Objects;
 import java.util.StringJoiner;
+
+import static org.msyu.parser.methodic.SymbolNameGenerator.describe;
 
 final class ProductionSignature {
 
@@ -34,21 +35,11 @@ final class ProductionSignature {
 
 	@Override
 	public final String toString() {
-		StringJoiner sj = new StringJoiner(", ", describe(lhs) + " \u2192", "");
+		StringJoiner sj = new StringJoiner(", ", describe(DefaultSymbolNameGenerator.INSTANCE, lhs) + " \u2192", "");
 		for (Object element : rhs) {
-			sj.add(describe(element));
+			sj.add(describe(DefaultSymbolNameGenerator.INSTANCE, element));
 		}
 		return sj.toString();
-	}
-
-	private static String describe(Object rep) {
-		if (rep instanceof Class) {
-			return DefaultSymbolNameGenerator.describeClass((Class<?>) rep);
-		} else if (rep instanceof EnumSet) {
-			return EnumLimiterInfo.withEnumClassAndSet((EnumSet<?>) rep, DefaultSymbolNameGenerator::describeEnumSet);
-		} else {
-			return "UnsupportedRep[" + rep + "]";
-		}
 	}
 
 }

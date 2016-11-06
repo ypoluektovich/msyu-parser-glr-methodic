@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 public @interface Repeat {
 	int INF = Integer.MAX_VALUE;
 
-	int value() default -1;
+	int value() default 0;
 	int min() default 0;
 	int max() default INF;
 }

@@ -3,7 +3,9 @@ package org.msyu.parser.methodic;
 import java.util.EnumSet;
 import java.util.StringJoiner;
 
-final class DefaultSymbolNameGenerator implements SymbolNameGenerator {
+enum DefaultSymbolNameGenerator implements SymbolNameGenerator {
+
+	INSTANCE;
 
 	static String describeClass(Class<?> klass) {
 		return klass.getName();
@@ -17,6 +19,11 @@ final class DefaultSymbolNameGenerator implements SymbolNameGenerator {
 		return sj.toString();
 	}
 
+	static String describeRepeat(int min, int max, Object element) {
+		return "Repeat-" + min + "-" + max + "-" + SymbolNameGenerator.describe(INSTANCE, element);
+	}
+
+
 	@Override
 	public final String byClass(Class<?> klass) {
 		return describeClass(klass);
@@ -25,6 +32,16 @@ final class DefaultSymbolNameGenerator implements SymbolNameGenerator {
 	@Override
 	public final <E extends Enum<E>> String byEnumSet(Class<E> klass, EnumSet<E> elements) {
 		return describeEnumSet(klass, elements);
+	}
+
+	@Override
+	public final String repeat(int min, int max, Object elementRep) {
+		return describeRepeat(min, max, elementRep);
+	}
+
+	@Override
+	public final String repeatInner(int count, Object elementRep) {
+		return describeRepeat(count, count, elementRep);
 	}
 
 }
