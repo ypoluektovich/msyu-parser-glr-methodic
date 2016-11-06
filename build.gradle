@@ -1,0 +1,70 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'com.jfrog.bintray' version '1.7.2'
+}
+
+group 'org.msyu.parser'
+ext.pkgname = 'glr-methodic'
+version '0.1.0'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    maven { url "http://dl.bintray.com/ypoluektovich/msyu" }
+}
+
+dependencies {
+    compile group + ':glr:0.1.+'
+
+    testCompile 'org.testng:testng:6.9.+'
+    testCompile 'org.hamcrest:java-hamcrest:2.0.+'
+    testCompile('org.mockito:mockito-core:1.10.+') {
+        exclude group: 'org.hamcrest', module: 'hamcrest-core'
+    }
+}
+
+test {
+    useTestNG()
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allSource
+}
+
+publishing {
+    publications {
+        main(MavenPublication) {
+            from components.java
+            artifactId pkgname
+
+            artifact sourceJar {
+                classifier "sources"
+            }
+        }
+    }
+}
+
+bintray {
+    user = bintrayUser
+    key = bintrayKey
+    publications = ['main']
+    dryRun = false
+    publish = false
+    pkg {
+        userOrg = 'ypoluektovich'
+        repo = 'msyu'
+        name = 'msyu-parser-' + project.name
+        desc = 'Write grammars for MSYU GLR as Java interfaces with default methods'
+        websiteUrl = 'https://github.com/ypoluektovich/msyu-parser-glr-methodic'
+        issueTrackerUrl = 'https://github.com/ypoluektovich/msyu-parser-glr-methodic/issues'
+        vcsUrl = 'https://github.com/ypoluektovich/msyu-parser-glr-methodic.git'
+        licenses = ['MPL-2.0']
+        publicDownloadNumbers = true
+        version {
+            name = project.version
+            vcsTag = 'v' + project.version
+        }
+    }
+}
