@@ -1,18 +1,14 @@
 package org.msyu.parser.methodic;
 
-import org.msyu.parser.glr.ASymbol;
-import org.msyu.parser.glr.GlrCallback;
-import org.msyu.parser.glr.Grammar;
-import org.msyu.parser.glr.GrammarBuilder;
-import org.msyu.parser.glr.NonTerminal;
-import org.msyu.parser.glr.Sapling;
-import org.msyu.parser.glr.Terminal;
+import org.msyu.parser.glr.*;
+import org.msyu.parser.glr.Production;
 import org.msyu.parser.treestack.TreeStack;
 import org.testng.annotations.BeforeMethod;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -65,7 +61,7 @@ public abstract class StringIntGrammarTestBase {
 			}
 
 			@Override
-			public Object reduce(Object oldBranch, org.msyu.parser.glr.Production production) {
+			public Object reduce(Object oldBranch, Production production, Lifeline lifeline) {
 				List<Object> rhs = new ArrayList<>(production.rhs.size());
 				Object poppedId = stack.pop(oldBranch, production.rhs.size(), t -> rhs.add(0, t));
 				List<Object> reduced = mg.reduce(production, rhs);
@@ -79,6 +75,10 @@ public abstract class StringIntGrammarTestBase {
 					return oldBranch;
 				}
 				throw new UnsupportedOperationException("GLR insert");
+			}
+
+			@Override
+			public void cutLifelines(Predicate<Lifeline> lifelineIsCut) {
 			}
 		});
 	}

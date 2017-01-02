@@ -1,6 +1,6 @@
 package org.msyu.parser.methodic;
 
-import org.msyu.parser.glr.State;
+import org.msyu.parser.glr.ScannerlessState;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
@@ -22,7 +22,7 @@ public class UnimplementedMethods extends StringIntGrammarTestBase {
 
 	@Test(expectedExceptions = ReductionException.class)
 	public void test() throws Exception {
-		State state = State.initializeFrom(sapling);
+		ScannerlessState state = ScannerlessState.initializeFrom(sapling);
 
 		try {
 			state = state.advance("1", callback);

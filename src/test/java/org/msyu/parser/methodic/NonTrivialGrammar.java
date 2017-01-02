@@ -1,7 +1,7 @@
 package org.msyu.parser.methodic;
 
 import org.mockito.ArgumentCaptor;
-import org.msyu.parser.glr.State;
+import org.msyu.parser.glr.ScannerlessState;
 import org.testng.annotations.Test;
 
 import static org.mockito.Mockito.times;
@@ -27,7 +27,7 @@ public class NonTrivialGrammar extends StringIntGrammarTestBase {
 
 	@Test
 	public void test() throws Exception {
-		State state = State.initializeFrom(sapling);
+		ScannerlessState state = ScannerlessState.initializeFrom(sapling);
 
 		state = state.advance("2", callback);
 		state = state.advance("3", callback);

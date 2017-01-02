@@ -3,6 +3,7 @@ package org.msyu.parser.methodic;
 import org.msyu.javautil.cf.Iterators;
 import org.msyu.parser.glr.ASymbol;
 import org.msyu.parser.glr.GlrCallback;
+import org.msyu.parser.glr.Lifeline;
 import org.msyu.parser.glr.NonTerminal;
 import org.msyu.parser.glr.Production;
 import org.msyu.parser.glr.Terminal;
@@ -10,6 +11,7 @@ import org.msyu.parser.treestack.TreeStack;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class MethodicCallbackBase implements GlrCallback<Object> {
 
@@ -54,15 +56,15 @@ public class MethodicCallbackBase implements GlrCallback<Object> {
 	}
 
 	@Override
-	public Object reduce(Object oldBranch, Production production) {
+	public Object reduce(Object oldBranch, Production production, Lifeline lifeline) {
 		List<Object> tokens = new ArrayList<>(production.rhs.size());
 		Object poppedId = stack.pop(oldBranch, production.rhs.size(), x -> tokens.add(0, x));
 		List<Object> result = methodicGrammar.reduce(production, tokens);
-		reduced(production.lhs, tokens, result);
+		reduced(production.lhs, tokens, result, lifeline);
 		return stack.push(poppedId, result.iterator());
 	}
 
-	public void reduced(NonTerminal lhs, List<Object> rhs, List<Object> result) {
+	public void reduced(NonTerminal lhs, List<Object> rhs, List<Object> result, Lifeline lifeline) {
 		// do nothing
 	}
 
@@ -77,6 +79,11 @@ public class MethodicCallbackBase implements GlrCallback<Object> {
 						Iterators.singletonIterator(token[0])
 				)
 		);
+	}
+
+	@Override
+	public void cutLifelines(Predicate<Lifeline> lifelineIsCut) {
+		// do nothing
 	}
 
 }

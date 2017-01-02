@@ -4,7 +4,7 @@ import org.msyu.parser.glr.ASymbol;
 import org.msyu.parser.glr.GrammarBuilder;
 import org.msyu.parser.glr.NonTerminal;
 import org.msyu.parser.glr.Sapling;
-import org.msyu.parser.glr.State;
+import org.msyu.parser.glr.ScannerlessState;
 import org.msyu.parser.glr.Terminal;
 import org.msyu.parser.glr.UnexpectedTokenException;
 import org.testng.annotations.BeforeMethod;
@@ -17,6 +17,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -62,14 +63,15 @@ public class RepeatInListParameters {
 
 		Sapling sapling = gb.build().newSapling((NonTerminal) mg.getSymbolOf(String.class));
 
-		State state = State.initializeFrom(sapling);
+		ScannerlessState state = ScannerlessState.initializeFrom(sapling);
 		state = state.advance(11, callback);
 		state = state.advance(22, callback);
 
 		verify(callback).reduced(
-				(NonTerminal) mg.getSymbolOf(String.class),
-				singletonList(Arrays.<Object>asList(11, 22)),
-				singletonList("2")
+				eq((NonTerminal) mg.getSymbolOf(String.class)),
+				eq(singletonList(Arrays.<Object>asList(11, 22))),
+				eq(singletonList("2")),
+				any()
 		);
 	}
 
@@ -80,10 +82,10 @@ public class RepeatInListParameters {
 
 		Sapling sapling = gb.build().newSapling((NonTerminal) mg.getSymbolOf(String.class));
 
-		State state = State.initializeFrom(sapling);
+		ScannerlessState state = ScannerlessState.initializeFrom(sapling);
 		state = state.advance(1, callback);
 
-		verify(callback, never()).reduced(any(), any(), any());
+		verify(callback, never()).reduced(any(), any(), any(), any());
 	}
 
 	@Test(expectedExceptions = UnexpectedTokenException.class)
@@ -93,7 +95,7 @@ public class RepeatInListParameters {
 
 		Sapling sapling = gb.build().newSapling((NonTerminal) mg.getSymbolOf(String.class));
 
-		State state = State.initializeFrom(sapling);
+		ScannerlessState state = ScannerlessState.initializeFrom(sapling);
 		state = state.advance(1, callback);
 		state = state.advance(2, callback);
 		state = state.advance(3, callback);
@@ -113,13 +115,14 @@ public class RepeatInListParameters {
 
 		Sapling sapling = gb.build().newSapling((NonTerminal) mg.getSymbolOf(String.class));
 
-		State state = State.initializeFrom(sapling);
+		ScannerlessState state = ScannerlessState.initializeFrom(sapling);
 		state = state.advance(0, callback);
 
 		verify(callback).reduced(
-				(NonTerminal) mg.getSymbolOf(String.class),
-				asList(0, emptyList()),
-				singletonList("0")
+				eq((NonTerminal) mg.getSymbolOf(String.class)),
+				eq(asList(0, emptyList())),
+				eq(singletonList("0")),
+				any()
 		);
 	}
 
@@ -130,14 +133,15 @@ public class RepeatInListParameters {
 
 		Sapling sapling = gb.build().newSapling((NonTerminal) mg.getSymbolOf(String.class));
 
-		State state = State.initializeFrom(sapling);
+		ScannerlessState state = ScannerlessState.initializeFrom(sapling);
 		state = state.advance(0, callback);
 		state = state.advance(11, callback);
 
 		verify(callback).reduced(
-				(NonTerminal) mg.getSymbolOf(String.class),
-				asList(0, singletonList(11)),
-				singletonList("1")
+				eq((NonTerminal) mg.getSymbolOf(String.class)),
+				eq(asList(0, singletonList(11))),
+				eq(singletonList("1")),
+				any()
 		);
 	}
 
@@ -148,15 +152,16 @@ public class RepeatInListParameters {
 
 		Sapling sapling = gb.build().newSapling((NonTerminal) mg.getSymbolOf(String.class));
 
-		State state = State.initializeFrom(sapling);
+		ScannerlessState state = ScannerlessState.initializeFrom(sapling);
 		state = state.advance(0, callback);
 		state = state.advance(11, callback);
 		state = state.advance(22, callback);
 
 		verify(callback).reduced(
-				(NonTerminal) mg.getSymbolOf(String.class),
-				asList(0, Arrays.<Object>asList(11, 22)),
-				singletonList("2")
+				eq((NonTerminal) mg.getSymbolOf(String.class)),
+				eq(asList(0, Arrays.<Object>asList(11, 22))),
+				eq(singletonList("2")),
+				any()
 		);
 	}
 
@@ -167,7 +172,7 @@ public class RepeatInListParameters {
 
 		Sapling sapling = gb.build().newSapling((NonTerminal) mg.getSymbolOf(String.class));
 
-		State state = State.initializeFrom(sapling);
+		ScannerlessState state = ScannerlessState.initializeFrom(sapling);
 		state = state.advance(0, callback);
 		state = state.advance(11, callback);
 		state = state.advance(22, callback);
@@ -188,7 +193,7 @@ public class RepeatInListParameters {
 
 		Sapling sapling = gb.build().newSapling((NonTerminal) mg.getSymbolOf(String.class));
 
-		State state = State.initializeFrom(sapling);
+		ScannerlessState state = ScannerlessState.initializeFrom(sapling);
 		state = state.advance(0, callback);
 		state = state.advance(1, callback);
 		state = state.advance(2, callback);
@@ -197,9 +202,10 @@ public class RepeatInListParameters {
 		state = state.advance(5, callback);
 
 		verify(callback).reduced(
-				(NonTerminal) mg.getSymbolOf(String.class),
-				asList(0, Arrays.<Object>asList(1, 2, 3, 4, 5)),
-				singletonList("5")
+				eq((NonTerminal) mg.getSymbolOf(String.class)),
+				eq(asList(0, Arrays.<Object>asList(1, 2, 3, 4, 5))),
+				eq(singletonList("5")),
+				any()
 		);
 	}
 

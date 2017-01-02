@@ -1,22 +1,23 @@
 plugins {
     id 'java'
     id 'maven-publish'
-    id 'com.jfrog.bintray' version '1.7.2'
+    id 'com.jfrog.bintray' version '1.7.3'
 }
 
 group 'org.msyu.parser'
 ext.pkgname = 'glr-methodic'
-version '0.1.1'
+version '0.2.0'
 
 sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
     maven { url "http://dl.bintray.com/ypoluektovich/msyu" }
+    mavenLocal()
 }
 
 dependencies {
-    compile group + ':glr:0.1.+'
+    compile group + ':glr:0.2.+'
 
     testCompile 'org.testng:testng:6.9.+'
     testCompile 'org.hamcrest:java-hamcrest:2.0.+'
