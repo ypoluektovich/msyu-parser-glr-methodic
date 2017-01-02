@@ -240,12 +240,17 @@ public final class MethodicGrammar {
 		List<ASymbol> rhs = new ArrayList<>();
 		for (Map.Entry<ProductionSignature, Method> sigAndMethod : methodBySignature.entrySet()) {
 			ProductionSignature sig = sigAndMethod.getKey();
+			Method method = sigAndMethod.getValue();
 			rhs.clear();
 			for (Object rep : sig.rhs) {
 				rhs.add(symbolByRep.get(rep));
 			}
-			org.msyu.parser.glr.Production prod = gb.addProduction((NonTerminal) symbolByRep.get(sig.lhs), rhs);
-			methodByProduction.put(prod, sigAndMethod.getValue());
+			org.msyu.parser.glr.Production prod = gb.addProduction(
+					(NonTerminal) symbolByRep.get(sig.lhs),
+					rhs,
+					method.getDeclaredAnnotation(Production.class).greedy()
+			);
+			methodByProduction.put(prod, method);
 		}
 		definitionIfaces.add(definition);
 	}
